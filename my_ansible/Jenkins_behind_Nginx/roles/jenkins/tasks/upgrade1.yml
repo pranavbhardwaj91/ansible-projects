@@ -1,0 +1,43 @@
+---
+ - name: Stopping the requests from Nginx to Jenkins server_1
+   lineinfile: backup=yes
+               state=present
+               dest=/etc/nginx/conf.d/load_balance.conf
+               regexp='^  server {{ groups[target][0] }}:8080;'
+               line='  server {{ groups[target][0] }}:8080 down;'
+   when: groups[target][2] == inventory_hostname
+
+ - name: Reloading the Nginx Configuration
+   service: name=nginx state=reloaded
+   when: groups[target][2] == inventory_hostname
+
+ - name: Stopping Tomcat server
+   service: name=tomcat7 state=stopped
+   when: groups[target][0] == inventory_hostname
+
+ - name: Removing the jenkins files in /var/lib/tomcat7/webapps/ directory
+   file: path={{ item }} state=absent
+   with_items:
+   - /var/lib/tomcat7/webapps/jenkins
+   - /var/lib/tomcat7/webapps/jenkins.war
+   when: groups[target][0] == inventory_hostname
+
+ - name: Downloading the new war file at location /var/lib/tomcat7/webapps/
+   get_url: url=http://mirrors.jenkins-ci.org/war/latest/jenkins.war dest=/var/lib/tomcat7/webapps/ mode=655
+   when: groups[target][0] == inventory_hostname
+   
+ - name: Starting the Tomcat Server after downloading the new war file.
+   service: name=tomcat7 state=started
+   when: groups[target][0] == inventory_hostname
+
+ - name: Up1
+   lineinfile: backup=yes
+               state=present
+               dest=/etc/nginx/conf.d/load_balance.conf
+               regexp='^  server {{ groups[target][0] }}:8080 down;'
+               line='  server {{ groups[target][0] }}:8080;'
+   when: groups[target][2] == inventory_hostname
+
+ - name: Reloading the Nginx Configuration after downloading the new var file.
+   service: name=nginx state=reloaded
+   when: groups[target][2] == inventory_hostname

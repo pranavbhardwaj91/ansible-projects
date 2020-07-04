@@ -1,0 +1,13 @@
+---
+ - name: Installing Nginx
+   apt: name=nginx state=latest update-cache=yes 
+
+ - name: Remove the defualt file under sites-available
+   file: path=/etc/nginx/sites-available/default state=absent
+
+ - name: Copying the Load Balancer Configuration File
+   template: src=load_balance.j2 dest=/etc/nginx/conf.d/load_balance.conf
+   notify:
+   - Restarting Nginx
+   tags:
+   - LoadBalance

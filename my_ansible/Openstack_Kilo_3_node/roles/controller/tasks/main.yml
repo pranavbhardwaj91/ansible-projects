@@ -1,0 +1,28 @@
+---
+ - name: Including db.yml
+   include: db.yml
+   when: (groups[target][0] == inventory_hostname)
+
+ - name: Including rabbitmq yml
+   include: rabbitmq.yml
+   when: (groups[target][0] == inventory_hostname)
+
+ - name: Including kestone yml
+   include: keystone.yml
+   when: (groups[target][0] == inventory_hostname)
+
+ - name: Including glance.yml
+   include: glance.yml
+   when: (groups[target][0] == inventory_hostname)
+
+ - name: Including compute.yml
+   include: nova.yml
+   when: (groups[target][0] == inventory_hostname)
+
+ - name: Including neutron.yml
+   include: neutron.yml
+   when: (groups[target][0] == inventory_hostname)
+
+ - name: Including dashboard.yml
+   include: dashboard.yml
+   when: (groups[target][0] == inventory_hostname)

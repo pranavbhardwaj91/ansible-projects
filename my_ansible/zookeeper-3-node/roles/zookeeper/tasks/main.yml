@@ -1,0 +1,23 @@
+---
+ - name: Creating /usr/local directory
+   file: path={{ zookeeper_local_dir }} state=directory
+
+
+ - name: Extracting the contents of Zookeeper tar ball to /usr/local
+   unarchive: src=zookeeper-{{ zookeeper_version  }}.tar.gz dest=/usr/local/ remote_src=no
+
+ - name: Creating zookeeper data directory
+   file: path={{ zookeeper_data_dir }} state=directory
+
+ - name: Deploying the configuration file
+   template: src=zookeeper.j2 dest={{ zookeeper_dir }}/conf/zoo.cfg
+   notify: 
+   - Restarting Zookeeper
+
+ - name: Copying zookeeper service to init directory
+   template: src=zookeeper_service.sh dest={{ zookeeper_init }}/zookeeper mode=0755
+
+ - name: Generating MyId
+   template: src=myid.j2 dest={{ zookeeper_data_dir }}/myid
+   notify:
+   - Restarting Zookeeper

@@ -1,0 +1,13 @@
+---
+
+ - name: Restarting Tomcat
+   service: name=tomcat7 state=restarted
+
+ - name: Restarting Nginx
+   service: name=nginx state=restarted
+
+ - name: Reloading Nginx
+   service: name=nginx state=reloaded
+
+ - name: Stopping Tomcat
+   service: name=tomcat7 state=stopped

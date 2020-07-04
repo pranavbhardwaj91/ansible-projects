@@ -1,0 +1,5 @@
+---
+iface: eth0
+target: foo
+Jenkins_port: 8080
+Nginx_port: 80

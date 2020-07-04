@@ -1,0 +1,10 @@
+[foo]
+10.0.0.40
+10.0.0.42
+10.0.0.41
+
+[foo:vars]
+ansible_ssh_user=root
+ansible_root_user=root
+ansible_ssh_pass={{wontbehere}}
+

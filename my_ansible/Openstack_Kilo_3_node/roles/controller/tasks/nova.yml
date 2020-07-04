@@ -1,0 +1,85 @@
+---
+
+ - mysql_db: name=nova state=present
+   tags:
+   - nova
+
+ - name: Granting the permissions to glance database created
+   mysql_user: name=nova password={{nova_db_password}} priv=nova.*:ALL  host={{ item }} state=present
+   with_items:
+   - "%"
+   - localhost
+   tags:
+   - nova
+
+# - name: Granting proper access to the Nova database
+#   shell: mysql -e "GRANT ALL PRIVILEGES ON nova.* TO 'nova'@'controller' IDENTIFIED BY 'Rules@123';"
+#   tags:
+#   - nova 
+
+# - name: Granting proper access to the Nova database
+#   shell: mysql -e "GRANT ALL PRIVILEGES ON nova.* TO 'nova'@'%' IDENTIFIED BY 'Rules@123';"
+#   tags:
+#   - nova
+
+# - name: Create nova user
+#   shell: openstack user create nova --password {{NOVA_USER_PASSWORD}} --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}} --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}} --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}}
+#   tags:
+#   - nova
+
+ - name: Creating the user admin
+   keystone_user: token={{ OS_TOKEN_KEYSTONE }} user=nova tenant=service password={{ADMIN_USER_PASSWORD}}
+   tags:
+   - nova
+
+# - name: Add admin role to nova user
+#   shell: openstack role add --project service --user nova admin --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}} --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}} --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}}
+#   tags:
+#   - nova
+
+ - name: Creating the admin role and Assign admin role to user nova and project service
+   keystone_user: token={{ OS_TOKEN_KEYSTONE }} role=admin user=nova tenant=service
+   tags:
+   - nova
+
+ - name: Creating nova service entity
+   shell: |
+    openstack service create --name nova --description "OpenStack Compute" compute --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}} --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}} --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}} 
+   tags:
+   - nova
+
+ - name: Creating Image service endpoints
+   shell: |
+    openstack endpoint create --publicurl {{NOVA_PUBLIC_CURL}} --internalurl {{NOVA_INTERNAL_URL}} --adminurl {{NOVA_ADMIN_URL}} --region RegionOne compute --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}} --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}} --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}}
+   tags:
+   - nova
+
+ - name: Installing Nova Packages
+   apt: name={{ item }} state=present force=yes
+   with_items:
+   - nova-api 
+   - nova-cert
+   - nova-conductor
+   - nova-consoleauth
+   - nova-novncproxy
+   - nova-scheduler
+   - python-novaclient
+   tags:
+   - nova
+
+ - name: Copying the nova conf file to /etc/nova/nova.conf location
+   template: src=nova.j2 dest=/etc/nova/nova.conf
+   tags:
+   - nova
+
+ - name: populate nova database
+   shell: /bin/sh -c "nova-manage db sync" nova
+   tags:
+   - nova
+   notify:
+   - Restarting nova-api
+   - Restarting nova-cert
+   - Restarting nova-conductor
+   - Restarting nova-consoleauth
+   - Restarting nova-novncproxy
+   - Restarting nova-scheduler

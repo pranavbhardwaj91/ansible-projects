@@ -1,0 +1,3 @@
+---
+ nagios_version: 4.1.1
+ nagios_build_directory: /opt

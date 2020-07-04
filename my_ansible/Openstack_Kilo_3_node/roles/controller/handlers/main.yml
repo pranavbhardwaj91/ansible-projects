@@ -1,0 +1,21 @@
+---
+ - name: Restarting Mysql
+   service: name=mysql state=restarted
+
+ - name: Restarting nova-api
+   service: name=nova-api state=restarted
+
+ - name: Restarting nova-cert
+   service: name=nova-cert state=restarted
+
+ - name: Restarting nova-conductor
+   service: name=nova-conductor state=restarted
+
+ - name: Restarting nova-consoleauth
+   service: name=nova-consoleauth state=restarted
+
+ - name: Restarting nova-novncproxy
+   service: name=nova-novncproxy state=restarted
+
+ - name: Restarting nova-scheduler
+   service: name=nova-scheduler state=restarted

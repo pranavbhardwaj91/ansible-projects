@@ -1,0 +1,5 @@
+---
+
+ - name: Include network.yml
+   include: network.yml
+   when: groups[target][1] == inventory_hostname 

@@ -1,0 +1,11 @@
+---
+
+ - name: including deploy yml
+   include: deploy.yml
+   tags:
+   - deploy
+
+ - name: including upgrade yml
+   include: upgrade.yml
+   tags:
+   - upgrade

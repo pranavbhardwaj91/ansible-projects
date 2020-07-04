@@ -1,0 +1,104 @@
+---
+
+ - mysql_db: name=glance state=present
+   tags:
+   - glance
+
+ - name: Granting the permissions to glance database created
+   mysql_user: name=glance password={{glance_db_password}} priv=glance.*:ALL  host={{ item }} state=present
+   with_items:
+   - "%"
+   - localhost
+   tags:
+   - glance
+
+# - name: Granting proper access to the Glance database
+#   shell: mysql -e "GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'controller' IDENTIFIED BY 'Rules@123';"
+#   tags:
+#   - glance
+
+# - name: Granting proper access to the Glance database
+#   shell: mysql -e "GRANT ALL PRIVILEGES ON glance.* TO 'glance'@'%' IDENTIFIED BY 'Rules@123';"
+#   tags:
+#   - glance
+
+
+ - name: Create glance user
+   shell: openstack user create glance --password {{GLANCE_USER_PASSWORD}} --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}}  --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}} --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}}  
+   tags:
+   - glance
+
+
+ - name: Add admin role to glance user
+   shell: openstack role add --project service --user glance admin --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}} --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}} --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}}
+   tags:
+   - glance
+
+ - name: Creating glance service entity
+   shell: | 
+    openstack service create --name glance --description "OpenStack Image service" image --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id  {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}} --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}}  --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}}
+   tags:
+   - glance
+
+ - name: Creating Image service endpoints
+   shell: |
+    openstack endpoint create --publicurl {{GLANCE_PUBLIC_CURL}} --internalurl {{GLANCE_INTERNAL_URL}} --adminurl {{GLANCE_ADMIN_URL}} --region RegionOne image --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}}  --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}} --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}}
+   tags:
+   - glance
+
+ - name: Installing Glance Packages
+   apt: name={{ item }} state=present force=yes
+   with_items:
+   - glance
+   - python-glanceclient
+   tags:
+   - glance
+
+ - name: Copying the glance-api conf file to location /etc/glance/glance-registry.conf
+   template: src=glance-api.j2 dest=/etc/glance/glance-api.conf
+   tags:
+   - glance
+
+ - name: Copying the glance-registry conf file to location /etc/glance/glance-registry.conf
+   template: src=glance-registry.j2 dest=/etc/glance/glance-registry.conf
+   tags:
+   - glance
+
+ - name: populate glance database
+   shell: /bin/sh -c "glance-manage db_sync" glance
+   tags:
+   - glance
+
+ - name: Restarting the glance-registry service
+   service: name=glance-registry state=restarted
+   tags:
+   - glance
+
+ - name: Restarting the glance-api service
+   service: name=glance-api state=restarted
+   tags:
+   - glance
+
+ - file: path=/images state=directory 
+   tags: 
+   - glance
+
+ - name: Downloading the Cirros Image to /tmp/images location
+   get_url: url=http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img dest=/images
+   tags: 
+   - glance
+
+ - name: Uploading the cirros image to the Image service
+   glance_image:
+    login_username={{GLANCE_IMAGE_USERNAME}}
+    login_password={{GLANCE_IMAGE_PASSWORD}}
+    login_tenant_name={{GLANCE_IMAGE_TENANT_NAME}}
+    auth_url={{OS_URL_KEYSTONE}}
+    name=cirros
+    container_format=bare
+    disk_format=qcow2
+    state=present
+    owner=admin
+    copy_from=http://download.cirros-cloud.net/0.3.4/cirros-0.3.4-x86_64-disk.img
+   tags:
+   - glance

@@ -1,0 +1,9 @@
+---
+ - name: Include compute.yml
+   include: compute.yml
+   when: (groups[target][2] == inventory_hostname)
+
+
+ - name: Including neutron.yml
+   include: neutron.yml
+   when: (groups[target][2] == inventory_hostname)

@@ -1,0 +1,20 @@
+---
+ - name: Installing compute hypervisor Packages
+   apt: name={{ item }} state=present force=yes update_cache=yes
+   with_items:
+   - nova-compute
+   - sysfsutils
+   tags:
+   - compute
+
+ - name: Copying the nova.conf to location /etc/nova/nova.conf
+   template: src=nova.j2 dest=/etc/nova/nova.conf
+   tags:
+   - compute
+
+ - name: Copying the nova-compute.conf to /etc/nova/nova-compute.conf location
+   template: src=nova-compute.j2 dest=/etc/nova/nova-compute.conf
+   tags:
+   - compute
+   notify:
+   - Restarting nova-compute

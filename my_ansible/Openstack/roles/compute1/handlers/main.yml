@@ -1,0 +1,3 @@
+---
+ - name: Restarting nova-compute
+   service: name=nova-compute state=restarted

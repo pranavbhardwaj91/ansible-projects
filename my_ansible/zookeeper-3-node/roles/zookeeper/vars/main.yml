@@ -1,0 +1,14 @@
+---
+ zookeeper_dir: /usr/local/zookeeper-{{ zookeeper_version }}
+ zookeeper_init: /etc/init.d/
+ zookeeper_local_dir: /usr/local
+ tick_time: 2000
+ zookeeper_data_dir: "{{ zookeeper_dir }}/data"
+ client_port: 2181
+ init_limit: 5
+ sync_limit: 2
+ zookeeper_version: 3.4.8 
+ target: zoo
+ client_port: 2181
+ ports: 2888:3888
+ iface: eth0

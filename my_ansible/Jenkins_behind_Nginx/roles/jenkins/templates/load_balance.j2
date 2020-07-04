@@ -1,0 +1,11 @@
+upstream backend  {
+  server {{ hostvars[groups[target][0]]['ansible_eth1']['ipv4']['address'] }}:{{ Jenkins_port }};
+  server {{ hostvars[groups[target][1]]['ansible_eth1']['ipv4']['address'] }}:{{ Jenkins_port }};
+}
+
+server {
+  listen {{ Nginx_port }};
+  location / {
+    proxy_pass  http://backend;
+  }
+}

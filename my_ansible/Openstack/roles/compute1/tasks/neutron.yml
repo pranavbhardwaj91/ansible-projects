@@ -1,0 +1,49 @@
+---
+
+ - name: configure sysctl
+   sysctl: name={{ item.name }} value={{ item.value }} state=present sysctl_file=/etc/sysctl.confa reload=yes
+   with_items:
+   - { name: 'net.ipv4.conf.all.rp_filter' , value: '0' }
+   - { name: 'net.ipv4.conf.default.rp_filter' , value: '0' }
+   - { name: 'net.bridge.bridge-nf-call-iptables' , value: '1' }
+   - { name: 'net.bridge.bridge-nf-call-ip6tables' , value: '1' }
+   tags:
+   - nc
+
+ - name: Installing neutron Packages
+   apt: name={{ item }} state=present force=yes update_cache=yes
+   with_items:
+   - neutron-plugin-ml2
+   - neutron-plugin-openvswitch-agent
+   tags:
+   - nc
+
+ - name: Copying the neutron1.j2 to location /etc/neutron/neutron.conf
+   template: src=neutron1.j2 dest=/etc/neutron/neutron.conf
+   tags:
+   - nc
+
+ - name: Copying the ml2_conf.ini to location /etc/neutron/plugins/ml2/ml2_conf.ini 
+   template: src=ml2_conf.j2 dest=/etc/neutron/plugins/ml2/ml2_conf.ini
+   tags:
+   - nc
+
+ - name: Restarting openvswitch-switch
+   service: name=openvswitch-switch state=restarted
+   tags:
+   - nc
+ 
+ - name: Copying the nova.conf to location /etc/nova/nova.conf
+   template: src=nova.j2 dest=/etc/nova/nova.conf
+   tags:
+   - nc
+
+ - name: Restarting the nova-compute
+   service: name=nova-compute state=restarted
+   tags:
+   - nc
+ 
+ - name: Restarting the neutron-plugin-openvswitch-agent
+   service: name=neutron-plugin-openvswitch-agent state=restarted 
+   tags:
+   - nc

@@ -1,0 +1,42 @@
+---
+ - name: Donloading the Nagios Plugins tar ball to /opt directory
+   unarchive: src=/home/ubuntu/packages/nagios-plugins-{{ nagios_plugins_version }}.tar.gz dest=/opt remote_src=no
+
+ - name: Configurng the /opt/nagios-plugins directoy
+   command: "./configure --with-nagios-user=nagios --with-nagios-group=nagios --with-openssl chdir={{nagios_plugins_build_directory}}/nagios-plugins-{{nagios_plugins_version}}"
+
+ - name: Making /opt/nagios-plugins
+   command: "make chdir={{nagios_plugins_build_directory}}/nagios-plugins-{{nagios_plugins_version}}"
+
+ - name: Making install /opt/nagios-plugins
+   command: "make install chdir={{nagios_plugins_build_directory}}/nagios-plugins-{{nagios_plugins_version}}"
+  
+ - replace: dest=/usr/local/nagios/etc/nagios.cfg regexp='^#cfg_dir=\/usr\/local\/nagios\/etc\/servers' replace=cfg_dir=/usr/local/nagios/etc/servers backup=yes
+
+ - name: Making directory to store conf files for server to monitor
+   file: path=/usr/local/nagios/etc/servers state=directory
+
+ - name: Configuring Nagios Contacts
+   template: src=contacts.j2 dest={{ contacts_location }}/contacts.cfg
+
+ - name: Adding NRPE command
+   template: >
+    src=commands.j2
+    dest=/usr/local/nagios/etc/objects/commands.cfg
+
+ - name: enabled mod_rewrite
+   apache2_module: name=rewrite state=present
+
+ - name: enable mod_cgi
+   apache2_module: name=cgi state=present
+
+ - name: Installing pythonpass lib for htpasswd
+   apt: "pkg=python-passlib state=installed"
+
+ - htpasswd: path=/usr/local/nagios/etc/htpasswd.users name=nagiosadmin password=Rules@123 owner=www-data group=nagcmd mode=0640 state=present
+
+ - file: src=/etc/apache2/sites-available/nagios.conf dest=/etc/apache2/sites-enabled/nagios.conf state=link
+
+   notify: 
+   - Restarting Nagios
+   - Restarting Apache

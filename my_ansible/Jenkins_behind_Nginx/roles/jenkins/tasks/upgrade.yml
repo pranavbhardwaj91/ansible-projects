@@ -1,0 +1,7 @@
+---
+
+ - name: Including upgrade1 yml
+   include: roles/jenkins/tasks/upgrade1.yml
+
+ - name: Including upgrade2 yml
+   include: roles/jenkins/tasks/upgrade2.yml

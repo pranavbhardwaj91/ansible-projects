@@ -1,0 +1,67 @@
+---
+
+ - name: Installing Apache2
+   apt: name=apache2 state=present update_cache=yes
+
+ - name: Set MySQL root password before installing
+   debconf: name='mysql-server' question='mysql-server/root_password' value='{{MySQL_root_pass | quote}}' vtype='password'
+
+ - name: Confirm MySQL root password before installing
+   debconf: name='mysql-server' question='mysql-server/root_password_again' value='{{MySQL_root_pass | quote}}' vtype='password'
+
+ - name: Install MySQL
+   apt: package={{ item }} state=installed force=yes update_cache=yes
+   with_items:
+   - mysql-server
+   - mysql-client
+
+ - name: Installing PhP
+   apt: package={{ item }} state=installed force=yes update_cache=yes
+   with_items:
+   - php5
+   - libapache2-mod-php5
+   - php5-mysql
+   - php5-curl
+   - php5-gd
+   - php5-intl
+   - php-pear
+   - php5-imagick
+   - php5-imap
+   - php5-mcrypt
+   - php5-memcache
+   - php5-ming
+   - php5-ps
+   - php5-pspell
+   - php5-recode 
+   - php5-snmp
+   - php5-sqlite
+   - php5-tidy
+   - php5-xmlrpc
+   - php5-xsl
+   - php5-xcache
+
+   notify:
+   - Restart Apache2
+
+
+
+ - name: debconf for pma
+   debconf: name=phpmyadmin question='phpmyadmin/dbconfig-install' value='true' vtype='boolean'
+
+ - name: debconf for pma
+   debconf: name=phpmyadmin question='phpmyadmin/app-password-confirm' value='{{MySQL_root_pass}}' vtype='password'
+
+ - name: debconf for pma
+   debconf: name=phpmyadmin question='phpmyadmin/mysql/admin-pass' value='{{MySQL_root_pass}}' vtype='password'
+
+ - name: debconf for pma
+   debconf: name=phpmyadmin question='phpmyadmin/mysql/app-pass' value='{{MySQL_root_pass}}' vtype='password'
+
+ - name: debconf for pma
+   debconf: name=phpmyadmin question='phpmyadmin/reconfigure-webserver' value='apache2' vtype='multiselect'
+
+ - name: debconf for pma
+   debconf: name=phpmyadmin question='phpmyadmin/dbconfig-install' value='false' vtype='boolean'
+
+ - name: install pma
+   apt: pkg=phpmyadmin state=present

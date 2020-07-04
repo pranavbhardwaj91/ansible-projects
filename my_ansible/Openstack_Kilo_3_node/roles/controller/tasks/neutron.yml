@@ -1,0 +1,92 @@
+---
+
+ - mysql_db: name=neutron state=present
+   tags:
+   - neutron
+
+ - name: Granting the permissions to glance database created
+   mysql_user: name=neutron password={{neutron_db_password}} priv=neutron.*:ALL  host={{ item }} state=present
+   with_items:
+   - "%"
+   - localhost
+   tags:
+   - neutron
+
+# - name: Granting proper access to the neutron database
+#   shell: mysql -e "GRANT ALL PRIVILEGES ON neutron.* TO 'neutron'@'localhost'  IDENTIFIED BY 'Rules@123';"
+#   tags:
+#   - neutron
+
+# - name: Granting proper access to the neutron database
+#   shell: mysql -e "GRANT ALL PRIVILEGES ON neutron.* TO 'neutron'@'%' IDENTIFIED BY 'Rules@123';"
+#   tags:
+#   - neutron
+
+# - name: Creating neutron user
+#   shell: openstack user create neutron --password {{NEUTRON_USER_PASSWORD}} --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}} --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}} --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}} 
+#   tags:
+#   - neutron
+
+ - name: Creating the user neutron
+   keystone_user: token={{ OS_TOKEN_KEYSTONE }} user=neutron tenant=service password={{ADMIN_USER_PASSWORD}}
+   tags:
+   - neutron
+
+# - name: Adding admin role to neutron user
+#   shell:  openstack role add --project service --user neutron admin --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}} --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}} --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}} 
+#   tags:
+#   - neutron
+
+ - name: Creating the admin role and Assign admin role to neutron and project service
+   keystone_user: token={{ OS_TOKEN_KEYSTONE }} role=admin user=neutron tenant=service
+   tags:
+   - neutron
+
+ - name: Creating neutron service entity
+   shell: openstack service create --name neutron --description "OpenStack Networking" network --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}} --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}} --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}}  
+   tags:
+   - neutron
+
+ - name: Creating the Networking service API endpoint
+   shell: openstack endpoint create --publicurl {{NOVA_PUBLIC_CURL}} --adminurl {{NOVA_ADMIN_URL}} --internalurl {{NOVA_INTERNAL_URL}} --region RegionOne network --os-project-domain-id {{OS_PROJECT_DOMAIN_ID}} --os-user-domain-id {{OS_USER_DOMAIN_ID}}  --os-project-name {{OS_PROJECT_NAME}} --os-tenant-name {{OS_TENANT_NAME}} --os-username {{OS_USERNAME}} --os-password {{OS_PASSWORD}} --os-auth-url {{OS_AUTH_URL}}    
+   tags:
+   - neutron
+
+ - name: Installing the neutron packages
+   apt: name={{ item }} state=present update_cache=yes force=yes
+   with_items:
+   - neutron-server
+   - neutron-plugin-ml2
+   - python-neutronclient
+   tags:
+   - neutron
+
+ - name: Copying the neutron.conf to location /etc/neutron/neutron.conf
+   template: src=neutron.j2 dest=/etc/neutron/neutron.conf
+   tags:
+   - neutron
+
+ - name: Copying the ml2_conf.ini to /etc/neutron/plugins/ml2/ml2_conf.ini location
+   template: src=ml2_conf.j2 dest=/etc/neutron/plugins/ml2/ml2_conf.ini
+   tags:
+   - neutron
+
+ - name: Copying the nova.conf to location /etc/nova/nova.conf with neutron parameteres updated
+   template: src=nova.j2 dest=/etc/nova/nova.conf
+   tags:
+   - neutron
+
+ - name: Populating the database
+   shell: /bin/sh -c "neutron-db-manage --config-file /etc/neutron/neutron.conf --config-file /etc/neutron/plugins/ml2/ml2_conf.ini upgrade head" neutron
+   tags:
+   - neutron
+
+ - name: Restarting nova-api 
+   service: name=nova-api state=restarted
+   tags:
+   - neutron
+
+ - name: Restarting neutron-server
+   service: name=neutron-server state=restarted
+   tags:
+   - neutron

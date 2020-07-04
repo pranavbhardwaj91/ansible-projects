@@ -1,0 +1,96 @@
+---
+
+ - name: configure sysctl
+   sysctl: name={{ item.name }} value={{ item.value }} state=present sysctl_file=/etc/sysctl.confa reload=yes
+   with_items:
+   - { name: 'net.ipv4.ip_forward' , value: '1' }
+   - { name: 'net.ipv4.conf.all.rp_filter' , value: '0' }
+   - { name: 'net.ipv4.conf.default.rp_filter' , value: '0' }
+   tags:
+   - ns
+
+ - name: Installing Neutron Node Packages
+   apt: name={{ item }} state=present force=yes update_cache=yes
+   with_items:
+   - neutron-plugin-ml2
+   - neutron-plugin-openvswitch-agent
+   - neutron-l3-agent
+   - neutron-dhcp-agent
+   - neutron-metadata-agent
+   tags:
+   - ns
+
+ - name:  Copying the neutron.conf to /etc/neutron/neutron.conf
+   template: src=neutron1.j2 dest=/etc/neutron/neutron.conf
+   tags:
+   - ns
+
+ - name: Copying the ml2_conf.ini to location /etc/neutron/plugins/ml2/ml2_conf.ini
+   template: src=ml2_conf.j2 dest=/etc/neutron/plugins/ml2/ml2_conf.ini
+   tags:
+   - ns
+
+ - name: Copying the l3_agent.ini to location /etc/neutron/l3_agent.ini
+   template: src=l3_agent.j2 dest=/etc/neutron/l3_agent.ini
+   tags:
+   - ns
+
+ - name: Copying the dhcp_agent.ini to location /etc/neutron/dhcp_agent.ini
+   template: src=dhcp_agent.j2 dest=/etc/neutron/dhcp_agent.ini
+   tags:
+   - ns
+
+ - name: Copying the dnsmasq-neutron.conf to location /etc/neutron/dnsmasq-neutron.conf
+   template: src=dnsmasq-neutron.j2 dest=/etc/neutron/dnsmasq-neutron.conf
+   tags:
+   - ns
+
+# - name: Killing any existing dnsmasq processes
+#   shell: pkill dnsmasq
+#   tags:
+#   - ns
+
+ - name: Copying the metadata_agent.ini to location /etc/neutron/metadata_agent.ini
+   template: src=metadata_agent.j2 dest=/etc/neutron/metadata_agent.ini
+   tags: 
+   - ns
+
+ - name: Restarting openvswitch-switch
+   service: name=openvswitch-switch state=restarted
+   tags:
+   - ns
+
+ - name: Adding the external bridge
+   shell: ovs-vsctl add-br br-ex
+   tags:
+   - ns
+
+ - name: Adding port to the external bridge that connects to the physical external network interface
+   shell: ovs-vsctl add-port br-ex eth2
+   tags:
+   - ns
+
+ - name: temporarily disable GRO on the external network interface
+   shell: ethtool -K eth2 gro off
+   tags:
+   - ns
+
+ - name: Restarting neutron-plugin-openvswitch-agent
+   service: name=neutron-plugin-openvswitch-agent state=restarted
+   tags:
+   - ns
+
+ - name: Restarting neutron-l3-agent
+   service: name=neutron-l3-agent state=restarted
+   tags:
+   - ns
+
+ - name: Restarting neutron-dhcp-agent
+   service: name=neutron-dhcp-agent state=restarted
+   tags:
+   - ns
+
+ - name: Restarting neutron-metadata-agent
+   service: name=neutron-metadata-agent state=restarted
+   tags:
+   - ns

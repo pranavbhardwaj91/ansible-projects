@@ -1,0 +1,5 @@
+---
+ nagios_plugins_version: 2.1.1
+ nagios_plugins_build_directory: /opt
+ contacts_location: /usr/local/nagios/etc/objects
+ mail_id: pranav.bhardwaj@imaginea.com

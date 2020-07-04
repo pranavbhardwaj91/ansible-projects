@@ -1,0 +1,8 @@
+---
+- hosts: zoo
+  gather_facts: yes
+  become: yes
+  roles:
+    - nagios_prerequisites
+    - nagios
+    - nagios_plugins

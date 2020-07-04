@@ -1,0 +1,9 @@
+[con]
+10.0.0.11
+10.0.0.21
+10.0.0.31
+
+[con:vars]
+ansible_ssh_user=root
+ansible_root_user=root
+ansible_ssh_pass=password

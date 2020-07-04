@@ -1,0 +1,8 @@
+---
+- hosts: "{{ target }}"
+  become: yes
+  roles:
+#    - openstack_keyring
+    - controller
+    - compute1
+    - neutron

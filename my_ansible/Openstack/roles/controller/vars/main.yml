@@ -1,0 +1,38 @@
+---
+target: con
+
+keystone_db_password: Rules@123
+OS_URL_KEYSTONE: http://controller:35357/v2.0
+OS_TOKEN_KEYSTONE: 123
+PUBLIC_CURL_KEYSTONE: http://controller:5000/v2.0
+INTERNAL_URL: http://controller:5000/v2.0
+ADMIN_URL: http://controller:35357/v2.0
+ADMIN_USER_PASSWORD: Rules@123
+
+glance_db_password: Rules@123
+GLANCE_USER_PASSWORD: Rules@123
+OS_PROJECT_DOMAIN_ID: default
+OS_USER_DOMAIN_ID: default
+OS_PROJECT_NAME: admin
+OS_TENANT_NAME: admin
+OS_USERNAME: admin
+OS_PASSWORD: Rules@123
+OS_AUTH_URL: http://controller:35357/v3
+GLANCE_PUBLIC_CURL: http://controller:9292
+GLANCE_INTERNAL_URL: http://controller:9292
+GLANCE_ADMIN_URL: http://controller:9292
+GLANCE_IMAGE_USERNAME: admin
+GLANCE_IMAGE_PASSWORD: Rules@123
+GLANCE_IMAGE_TENANT_NAME: admin
+
+nova_db_password: Rules@123
+NOVA_USER_PASSWORD: Rules@123
+NOVA_PUBLIC_CURL: http://controller:8774/v2/%\(tenant_id\)s
+NOVA_INTERNAL_URL: http://controller:8774/v2/%\(tenant_id\)s
+NOVA_ADMIN_URL:  http://controller:8774/v2/%\(tenant_id\)s
+
+neutron_db_password: Rules@123
+NEUTRON_USER_PASSWORD: Rules@123
+NEUTRON_PUBLIC_CURL: http://controller:9696
+NEUTRON_ADMIN_URL: http://controller:9696
+NEUTRON_INTERNAL_URL: http://controller:9696 

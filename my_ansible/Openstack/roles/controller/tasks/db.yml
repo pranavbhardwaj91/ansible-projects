@@ -1,0 +1,19 @@
+---
+
+ - name: Installing MariaDB
+   apt: name={{ item }} state=present force=yes
+   with_items:
+   - mariadb-server
+   - python-mysqldb
+   tags:
+   - db
+
+ - name: Copying the Cnfig file to /etc/mysql/conf.d/ location
+   template: src=mysqld_openstack.j2 dest=/etc/mysql/conf.d/mysql_openstack.cnf owner=root group=root mode="u=rw,g=r,o=r" backup=yes
+   tags:
+   - db
+
+ - name: Restarting Mysql
+   service: name=mysql state=restarted
+   tags:
+   - db

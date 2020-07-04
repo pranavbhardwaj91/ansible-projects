@@ -1,0 +1,18 @@
+---
+
+ - name: Installing the dashboard packages
+   apt: name={{ item }} state=present update_cache=yes force=yes
+   with_items:
+   - openstack-dashboard
+   tags:
+   - dashboard
+
+ - name: Copying the local_settings.py to /etc/openstack-dashboard/local_settings.py
+   template: src=local_settings.j2 dest=/etc/openstack-dashboard/local_settings.py
+   tags:
+   - dashboard
+
+ - name: Restarting Apache
+   service: name=apache2 state=restarted
+   tags:
+   - dashboard

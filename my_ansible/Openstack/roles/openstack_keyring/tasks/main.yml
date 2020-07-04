@@ -1,0 +1,20 @@
+---
+ - name: Installing ubuntu cloud keyring
+   apt: name=ubuntu-cloud-keyring state=present
+   tags:
+   - common
+
+ - name: Create a file 
+   file: path=/etc/apt/sources.list.d/cloudarchive-kilo.list state=touch mode="0644"
+   tags:
+   - common
+    
+ - name: Append a line  
+   lineinfile: dest=/etc/apt/sources.list.d/cloudarchive-kilo.list line="deb http://ubuntu-cloud.archive.canonical.com/ubuntu trusty-updates/kilo main"
+   tags:
+   - common
+
+ - name: Updating and Upgrading
+   apt: update_cache=yes upgrade=dist force=yes
+   tags:
+   - common

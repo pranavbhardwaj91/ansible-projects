@@ -1,0 +1,16 @@
+---
+
+ - name: Installing RabbitMQ
+   apt: name=rabbitmq-server state=present force=yes
+   tags:
+   - rabbitmq
+
+ - rabbitmq_user: user=openstack
+                  password=Rules@123
+                  vhost=/
+                  configure_priv=.*
+                  read_priv=.*
+                  write_priv=.*
+                  state=present
+   tags:
+   - rabbitmq

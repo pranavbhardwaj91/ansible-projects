@@ -1,0 +1,60 @@
+---
+ - name: create nagios group
+   group: >
+     gid=3000
+     name=nagios
+
+ - name: create nagcmd group
+   group: >
+     gid=3001
+     name=nagcmd
+
+ - name: create nagios user
+   user: >
+     uid=3000
+     group=nagios
+     groups=nagcmd
+     name=nagios
+     home=/usr/local/nagios
+     comment="Nagios Admin"
+
+ - name: add user www-data to nagcmd group
+   user: >
+     groups=nagcmd
+     name=www-data
+
+ - name: Installing required packages for Nagios
+   apt: package={{ item }} state=installed force=yes update_cache=yes
+   with_items:
+   - build-essential
+   - libgd2-xpm-dev
+   - openssl
+   - libssl-dev
+   - xinetd
+   - apache2-utils
+   - unzip
+
+ - name: Downloading Nagios tarball to /opt location
+   unarchive: src=/home/ubuntu/packages/nagios-{{ nagios_version  }}.tar.gz dest=/opt remote_src=no
+
+ - name: Configuring the Nagios
+   command: "./configure --with-nagios-group=nagios --with-command-group=nagcmd chdir={{nagios_build_directory}}/nagios-{{nagios_version}}"
+
+ - name: Making the /opt/nagios
+   command: "make all chdir={{nagios_build_directory}}/nagios-{{nagios_version}}"
+
+ - name: Make installing
+   command: "make install chdir={{nagios_build_directory}}/nagios-{{nagios_version}}"
+
+
+ - name: Making install commandmode
+   command: "make install-commandmode chdir={{nagios_build_directory}}/nagios-{{nagios_version}}"
+
+ - name: Making install-init
+   command: "make install-init chdir={{nagios_build_directory}}/nagios-{{nagios_version}}"
+
+ - name: make install-config
+   command: "make install-config chdir={{nagios_build_directory}}/nagios-{{nagios_version}}"
+
+ - name: Copying the nagios apache conf file to sites availabe directory
+   template: src=nagios.j2 dest=/etc/apache2/sites-available/nagios.conf

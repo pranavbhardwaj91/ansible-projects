@@ -1,0 +1,203 @@
+---
+ - mysql_db: name=keystone state=present 
+   tags:
+   - keystone
+
+ - name: create DB account for keystone
+   mysql_user: name=keystone password={{keystone_db_password}} priv=keystone.*:ALL  host={{ item }} state=present
+   with_items:
+   - "%"
+   - localhost
+   tags:
+   - keystone
+
+# - name: Granting proper access to keystone database
+#   shell: mysql -e "GRANT ALL PRIVILEGES ON keystone.* TO 'keystone'@'localhost'  IDENTIFIED BY 'Rules@123';"
+#   tags: 
+#   - keystone
+
+# - name: Granting proper access to keystone database
+#   shell: mysql -e "GRANT ALL PRIVILEGES ON keystone.* TO 'keystone'@'%' IDENTIFIED BY 'Rules@123';" 
+#   tags:
+#   - keystone
+
+ - name: Disable the keystone service from starting automatically after installation
+   shell: /bin/echo "manual" >> /etc/init/keystone.override 
+   tags:
+   - keystone
+
+ - name: Installing Keystone Packages
+   apt: name={{ item }} state=present force=yes
+   with_items:
+   - keystone
+   - python-openstackclient
+   - apache2
+   - libapache2-mod-wsgi
+   - memcached 
+   - python-memcache
+   tags:
+   - keystone
+
+ - name: Copying the keystone conf file to /etc/keystone/ location
+   template: src=keystone.j2 dest=/etc/keystone/keystone.conf
+   tags:
+    - keystone
+
+ - name: populate keystone database
+   shell: /bin/su -s /bin/sh -c "keystone-manage db_sync" keystone
+   tags:
+   - keystone
+
+ - name: Configuring apache2
+   template: src=apache2.j2 dest=/etc/apache2/apache2.conf owner=root group=root mode="u=rw,g=r,o=r"
+   tags:
+   - keystone
+
+ - name: Copying wsgi-keystone conf file at /etc/apache2/sites-available/
+   template: src=wsgi-keystone.j2 dest=/etc/apache2/sites-available/wsgi-keystone.conf
+   tags:
+   - keystone
+
+# - name: Touching the file wsgi-keystone.conf at location /etc/apache2/sites-available/wsgi-keystone.conf
+ - file: path=/etc/apache2/sites-available/wsgi-keystone.conf state=touch mode=0777
+   tags:
+   - keystone
+
+# - name: Creating soft link from wsgi-keystone conf to sites-enabled
+ - file: src=/etc/apache2/sites-available/wsgi-keystone.conf dest=/etc/apache2/sites-enabled/wsgi-keystone.conf state=link owner=root group=root mode=0777
+   tags:
+   - keystone
+
+ - name: Creating Directory
+   file: path={{ item }} state=directory
+   with_items: 
+   - /var/www/cgi-bin/
+   - /var/www/cgi-bin/keystone
+   tags:
+   - keystone
+
+ - name: Copy the WSGI components from the upstream repository for admin
+   template: src=admin.j2 dest=/var/www/cgi-bin/keystone/admin owner=root group=root mode="u=rw,g=r,o=r"
+   tags:
+   - keystone
+
+ - name: Copy the WSGI components from the upstream repository for main
+   template: src=admin.j2 dest=/var/www/cgi-bin/keystone/main owner=root group=root mode="u=rw,g=r,o=r"
+   tags:
+   - keystone
+
+ - name: Assinging the permissions
+   file: path=/var/www/cgi-bin/keystone/{{item}}  owner=keystone group=keystone mode=755
+   with_items:
+   - admin
+   - main
+   tags:
+   - keystone
+
+ - name: Restarting apache service
+   service: name=apache2 state=restarted
+   tags:
+   - keystone
+
+ - name: service entity for the Identity service
+   shell: openstack service create  --os-url {{OS_URL_KEYSTONE}} --os-token {{OS_TOKEN_KEYSTONE}} --name keystone --description "OpenStack Identity" identity  
+   tags:
+   - keystone
+
+ - name: Creating the three enpoints The Identity service API endpoints
+   shell:  openstack endpoint create --os-url {{OS_URL_KEYSTONE}} --os-token {{OS_TOKEN_KEYSTONE}} --publicurl {{PUBLIC_CURL_KEYSTONE}} --internalurl {{INTERNAL_URL}} --adminurl {{ADMIN_URL}} --region RegionOne identity
+   tags:
+   - keystone
+
+# - name: Creating the project admin
+#   shell: openstack project create --os-url {{ OS_URL_KEYSTONE }} --os-token {{ OS_TOKEN_KEYSTONE }} --description "Admin Project" admin
+#   tags:
+#   - keystone
+
+ - name: Creating the project admin
+   keystone_user: token={{ OS_TOKEN_KEYSTONE }} tenant=admin tenant_description="Admin Project"
+   tags:
+   - keystone
+# - os_project: 
+#    cloud: openstack
+#    state: present
+#    name: admin
+#    description: Admin Project
+#    domain_id: default
+#    enabled: True 
+#   tags:
+#   - keystone
+
+# - name: Creating the user admin
+#   shell: openstack user create admin --password {{ADMIN_USER_PASSWORD}} --os-url {{OS_URL_KEYSTONE}} --os-token {{OS_TOKEN_KEYSTONE}} 
+#   tags:
+#   - keystone
+
+ - name: Creating the user admin
+   keystone_user: token={{ OS_TOKEN_KEYSTONE }} user=admin tenant=admin password={{ADMIN_USER_PASSWORD}}
+   tags:
+   - keystone
+
+# - name: Creating the admin role
+#   shell: openstack role create admin --os-url {{OS_URL_KEYSTONE}} --os-token {{OS_TOKEN_KEYSTONE}} 
+#   tags: 
+#   - keystone
+
+ - name: Creating the admin role and Assign admin role to admin user and tenant as admin
+   keystone_user: token={{ OS_TOKEN_KEYSTONE }} role=admin user=admin tenant=admin
+   tags:
+   - keystone
+
+
+# - name: Assign admin role to admin
+#   shell: openstack role add --project admin --user admin admin --os-url {{OS_URL_KEYSTONE}} --os-token {{OS_TOKEN_KEYSTONE}} 
+#   tags:
+#   - keystone
+
+# - name: Creating the project service
+#   shell: openstack project create --os-url {{OS_URL_KEYSTONE}}  --os-token {{OS_TOKEN_KEYSTONE}} --description "Service Project" service
+#   tags:
+#   - keystone
+
+ - name: Creating the project service
+   keystone_user: token={{ OS_TOKEN_KEYSTONE }} tenant=service tenant_description="Service Project"
+   tags:
+   - keystone
+
+# - name: Creating Demo project
+#   shell: openstack project create --os-url {{OS_URL_KEYSTONE}} --os-token {{OS_TOKEN_KEYSTONE}} --description "Demo Project" demo
+#   tags:
+#   - keystone
+
+ - name: Creating Demo project
+   keystone_user: token={{ OS_TOKEN_KEYSTONE }} tenant=demo tenant_description="Demo Project"
+   tags:
+   - keystone
+
+
+# - name: Creating the user demo
+#   shell: openstack user create demo --password Rules@123 --os-url {{OS_URL_KEYSTONE}} --os-token {{OS_TOKEN_KEYSTONE}}
+#   tags:
+#   - keystone
+
+ - name: Creating the user demo 
+   keystone_user: token={{ OS_TOKEN_KEYSTONE }} user=demo tenant=demo password={{ADMIN_USER_PASSWORD}}
+   tags:
+   - keystone
+
+
+# - name: Creating the role as user
+#   shell: openstack role create user --os-url {{OS_URL_KEYSTONE}} --os-token {{OS_TOKEN_KEYSTONE}}
+#   tags:
+#   - keystone
+
+
+ - name: Creating the user role and Assign user role to demo user and demo project
+   keystone_user: token={{ OS_TOKEN_KEYSTONE }} role=user user=demo tenant=demo
+   tags:
+   - keystone
+
+# - name: Assign user role to demo user and demo project
+#   shell: openstack role add --project demo --user demo user --os-url {{OS_URL_KEYSTONE}} --os-token {{OS_TOKEN_KEYSTONE}}
+#   tags:
+#   - keystone
